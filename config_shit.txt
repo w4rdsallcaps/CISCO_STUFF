@@ -1,0 +1,641 @@
+=====================================================================
+ USC NETWORK - STATIC ROUTING (IPv4 + IPv6), CENTRAL DHCP, TELNET
+ Block: 156.11.224.0/20  |  IPv6: 2001:DB8:ACAD::/48 (assumed, see notes)
+ Routers: ISP, IRM_Core, DCPE, DCISM, SAFAD, SHCP
+=====================================================================
+
+STEP 0 - RESET EVERY ROUTER FIRST (you applied the old CLI)
+---------------------------------------------------------------------
+ On each router:
+   enable
+   erase startup-config        (confirm)
+   reload                      (answer "no" if asked to save, then confirm)
+   (answer "no" to the initial configuration dialog, then paste its section below)
+
+
+---------------------------------------------------------------------
+ 1) IPv4 SUBNETTING (VLSM, largest to smallest) - 156.11.224.0/20
+---------------------------------------------------------------------
+ Subnet                 Mask               Network          Usable range                 Broadcast        Used by
+ 156.11.224.0/26        255.255.255.192    156.11.224.0     156.11.224.1 - .62           156.11.224.63    DCPE Gig0/0   (Switch0: PC0, PC1)
+ 156.11.224.64/26       255.255.255.192    156.11.224.64    156.11.224.65 - .126         156.11.224.127   DCPE Gig0/1   (Switch1: PC2, PC3)
+ 156.11.224.128/26      255.255.255.192    156.11.224.128   156.11.224.129 - .190        156.11.224.191   DCISM Gig0/0  (Switch2: PC4, PC5)
+ 156.11.224.192/26      255.255.255.192    156.11.224.192   156.11.224.193 - .254        156.11.224.255   SAFAD Gig0/0  (Switch3: PC6, PC7)
+ 156.11.225.0/26        255.255.255.192    156.11.225.0     156.11.225.1 - .62           156.11.225.63    SHCP Gig0/0   (Switch5: PC8, PC9)
+ 156.11.225.64/26       255.255.255.192    156.11.225.64    156.11.225.65 - .126         156.11.225.127   SHCP Gig0/1   (Switch4: PC10, PC11)
+ 156.11.225.128/28      255.255.255.240    156.11.225.128   156.11.225.129 - .142        156.11.225.143   Core Gig0/0   (IRM TNS Server)
+ 156.11.225.144/29      255.255.255.248    156.11.225.144   156.11.225.145 - .150        156.11.225.151   Core Gig0/1   (Admin Laptop)
+ 156.11.225.152/30      255.255.255.252    156.11.225.152   156.11.225.153 - .154        156.11.225.155   ISP  <-> Core
+ 156.11.225.156/30      255.255.255.252    156.11.225.156   156.11.225.157 - .158        156.11.225.159   Core <-> DCPE
+ 156.11.225.160/30      255.255.255.252    156.11.225.160   156.11.225.161 - .162        156.11.225.163   Core <-> SHCP
+ 156.11.225.164/30      255.255.255.252    156.11.225.164   156.11.225.165 - .166        156.11.225.167   DCPE <-> DCISM
+ 156.11.225.168/30      255.255.255.252    156.11.225.168   156.11.225.169 - .170        156.11.225.171   DCISM <-> SAFAD
+ 156.11.225.172/30      255.255.255.252    156.11.225.172   156.11.225.173 - .174        156.11.225.175   SAFAD <-> SHCP
+ (156.11.225.176 onward up to 156.11.239.255 is unused / reserved for growth)
+
+ External networks (from your topology, unchanged)
+   Cisco  198.200.128.32/27 (255.255.255.224)  router .33, server .34
+   Google 200.158.224.64/28 (255.255.255.240)  router .65, server .66
+
+---------------------------------------------------------------------
+ 2) IPv6 PLAN (/64 per segment, 4th hextet = subnet ID)
+---------------------------------------------------------------------
+   2001:DB8:ACAD:1::/64   DCPE Gig0/0      2001:DB8:ACAD:10::/64  ISP  <-> Core
+   2001:DB8:ACAD:2::/64   DCPE Gig0/1      2001:DB8:ACAD:11::/64  Core <-> DCPE
+   2001:DB8:ACAD:3::/64   DCISM Gig0/0     2001:DB8:ACAD:12::/64  Core <-> SHCP
+   2001:DB8:ACAD:4::/64   SAFAD Gig0/0     2001:DB8:ACAD:13::/64  DCPE <-> DCISM
+   2001:DB8:ACAD:5::/64   SHCP Gig0/0      2001:DB8:ACAD:14::/64  DCISM <-> SAFAD
+   2001:DB8:ACAD:6::/64   SHCP Gig0/1      2001:DB8:ACAD:15::/64  SAFAD <-> SHCP
+   2001:DB8:ACAD:7::/64   Core Gig0/0 (IRM TNS Server)
+   2001:DB8:ACAD:8::/64   Core Gig0/1 (Admin Laptop)
+   Cisco  2000:DB8:ACAD:128::/64 (router ::1, server ::2)
+   Google 2000:DB8:ACAD:224::/64 (router ::1, server ::2)
+ Routers use ::1 (LAN gateway). On links: the first router in the order shown above is ::1, the second ::2.
+ PCs: IPv6 set to Automatic (SLAAC). Routers send Router Advertisements automatically.
+
+---------------------------------------------------------------------
+ 3) END-DEVICE SETTINGS (static)
+---------------------------------------------------------------------
+ IRM TNS Server : 156.11.225.130 255.255.255.240  gw 156.11.225.129  DNS 156.11.225.130
+                  IPv6 2001:DB8:ACAD:7::2/64      gw 2001:DB8:ACAD:7::1
+ Admin Laptop   : 156.11.225.146 255.255.255.248  gw 156.11.225.145  DNS 156.11.225.130
+                  IPv6 2001:DB8:ACAD:8::2/64      gw 2001:DB8:ACAD:8::1
+                  (connect to IRM_Core Gig0/1 with a copper cross-over cable)
+ Cisco Server   : 198.200.128.34 255.255.255.224 gw 198.200.128.33
+                  IPv6 2000:DB8:ACAD:128::2/64    gw 2000:DB8:ACAD:128::1
+ Google Server  : 200.158.224.66 255.255.255.240 gw 200.158.224.65
+                  IPv6 2000:DB8:ACAD:224::2/64    gw 2000:DB8:ACAD:224::1
+ All 12 PCs     : IPv4 = DHCP, IPv6 = Automatic
+
+
+=====================================================================
+ ISP ROUTER
+=====================================================================
+enable
+configure terminal
+hostname ISP
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface GigabitEthernet0/0
+ description To Switch7 - Cisco Server
+ ip address 198.200.128.33 255.255.255.224
+ ipv6 address 2000:DB8:ACAD:128::1/64
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To Switch6 - Google Server
+ ip address 200.158.224.65 255.255.255.240
+ ipv6 address 2000:DB8:ACAD:224::1/64
+ no shutdown
+!
+interface Serial0/0/0
+ description To IRM_Core Se0/1/0
+ ip address 156.11.225.153 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:10::1/64
+ no shutdown
+!
+! Return routes to the whole USC network (summary)
+ip route 156.11.224.0 255.255.240.0 156.11.225.154
+ipv6 route 2001:DB8:ACAD::/48 2001:DB8:ACAD:10::2
+!
+! >>> now paste the MANAGEMENT BLOCK (bottom of this file)
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+
+=====================================================================
+ IRM_CORE ROUTER
+=====================================================================
+enable
+configure terminal
+hostname USC_Router
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface Serial0/1/0
+ description To ISP Se0/0/0
+ ip address 156.11.225.154 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:10::2/64
+ clock rate 128000
+ no shutdown
+!
+interface Serial0/0/1
+ description To DCPE Se0/0/1
+ ip address 156.11.225.157 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:11::1/64
+ no shutdown
+!
+interface Serial0/0/0
+ description To SHCP Se0/0/1
+ ip address 156.11.225.161 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:12::1/64
+ no shutdown
+!
+interface GigabitEthernet0/0
+ description To IRM TNS Server
+ ip address 156.11.225.129 255.255.255.240
+ ipv6 address 2001:DB8:ACAD:7::1/64
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To Admin Laptop
+ ip address 156.11.225.145 255.255.255.248
+ ipv6 address 2001:DB8:ACAD:8::1/64
+ no shutdown
+!
+! ---- IPv4 standard static routes ----
+! via DCPE (156.11.225.158)
+ip route 156.11.224.0 255.255.255.192 156.11.225.158
+ip route 156.11.224.64 255.255.255.192 156.11.225.158
+ip route 156.11.224.128 255.255.255.192 156.11.225.158
+ip route 156.11.225.164 255.255.255.252 156.11.225.158
+ip route 156.11.225.168 255.255.255.252 156.11.225.158
+! via SHCP (156.11.225.162)
+ip route 156.11.224.192 255.255.255.192 156.11.225.162
+ip route 156.11.225.0 255.255.255.192 156.11.225.162
+ip route 156.11.225.64 255.255.255.192 156.11.225.162
+ip route 156.11.225.172 255.255.255.252 156.11.225.162
+! DEFAULT ROUTE to ISP (only this router has one)
+ip route 0.0.0.0 0.0.0.0 156.11.225.153
+!
+! ---- IPv6 standard static routes ----
+! via DCPE (2001:DB8:ACAD:11::2)
+ipv6 route 2001:DB8:ACAD:1::/64 2001:DB8:ACAD:11::2
+ipv6 route 2001:DB8:ACAD:2::/64 2001:DB8:ACAD:11::2
+ipv6 route 2001:DB8:ACAD:3::/64 2001:DB8:ACAD:11::2
+ipv6 route 2001:DB8:ACAD:13::/64 2001:DB8:ACAD:11::2
+ipv6 route 2001:DB8:ACAD:14::/64 2001:DB8:ACAD:11::2
+! via SHCP (2001:DB8:ACAD:12::2)
+ipv6 route 2001:DB8:ACAD:4::/64 2001:DB8:ACAD:12::2
+ipv6 route 2001:DB8:ACAD:5::/64 2001:DB8:ACAD:12::2
+ipv6 route 2001:DB8:ACAD:6::/64 2001:DB8:ACAD:12::2
+ipv6 route 2001:DB8:ACAD:15::/64 2001:DB8:ACAD:12::2
+! DEFAULT ROUTE to ISP
+ipv6 route ::/0 2001:DB8:ACAD:10::1
+!
+! >>> now paste the MANAGEMENT BLOCK
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+
+=====================================================================
+ DCPE ROUTER   (PC0, PC1 on Gig0/0 | PC2, PC3 on Gig0/1)
+=====================================================================
+enable
+configure terminal
+hostname DCPE
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface GigabitEthernet0/0
+ description To Switch0 (PC0, PC1)
+ ip address 156.11.224.1 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:1::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To Switch1 (PC2, PC3)
+ ip address 156.11.224.65 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:2::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface Serial0/0/1
+ description To IRM_Core Se0/0/1
+ ip address 156.11.225.158 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:11::2/64
+ clock rate 128000
+ no shutdown
+!
+interface Serial0/0/0
+ description To DCISM Se0/0/0
+ ip address 156.11.225.165 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:13::1/64
+ clock rate 128000
+ no shutdown
+!
+! ---- IPv4 standard static routes ----
+! via DCISM (156.11.225.166)
+ip route 156.11.224.128 255.255.255.192 156.11.225.166
+ip route 156.11.224.192 255.255.255.192 156.11.225.166
+ip route 156.11.225.168 255.255.255.252 156.11.225.166
+ip route 156.11.225.172 255.255.255.252 156.11.225.166
+! via Core (156.11.225.157)
+ip route 156.11.225.0 255.255.255.192 156.11.225.157
+ip route 156.11.225.64 255.255.255.192 156.11.225.157
+ip route 156.11.225.128 255.255.255.240 156.11.225.157
+ip route 156.11.225.144 255.255.255.248 156.11.225.157
+ip route 156.11.225.152 255.255.255.252 156.11.225.157
+ip route 156.11.225.160 255.255.255.252 156.11.225.157
+ip route 198.200.128.32 255.255.255.224 156.11.225.157
+ip route 200.158.224.64 255.255.255.240 156.11.225.157
+!
+! ---- IPv6 standard static routes ----
+! via DCISM (2001:DB8:ACAD:13::2)
+ipv6 route 2001:DB8:ACAD:3::/64 2001:DB8:ACAD:13::2
+ipv6 route 2001:DB8:ACAD:4::/64 2001:DB8:ACAD:13::2
+ipv6 route 2001:DB8:ACAD:14::/64 2001:DB8:ACAD:13::2
+ipv6 route 2001:DB8:ACAD:15::/64 2001:DB8:ACAD:13::2
+! via Core (2001:DB8:ACAD:11::1)
+ipv6 route 2001:DB8:ACAD:5::/64 2001:DB8:ACAD:11::1
+ipv6 route 2001:DB8:ACAD:6::/64 2001:DB8:ACAD:11::1
+ipv6 route 2001:DB8:ACAD:7::/64 2001:DB8:ACAD:11::1
+ipv6 route 2001:DB8:ACAD:8::/64 2001:DB8:ACAD:11::1
+ipv6 route 2001:DB8:ACAD:10::/64 2001:DB8:ACAD:11::1
+ipv6 route 2001:DB8:ACAD:12::/64 2001:DB8:ACAD:11::1
+ipv6 route 2000:DB8:ACAD:128::/64 2001:DB8:ACAD:11::1
+ipv6 route 2000:DB8:ACAD:224::/64 2001:DB8:ACAD:11::1
+!
+! >>> now paste the MANAGEMENT BLOCK
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+=====================================================================
+ DCISM ROUTER   (PC4, PC5 on Gig0/0)
+=====================================================================
+enable
+configure terminal
+hostname DCISM
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface GigabitEthernet0/0
+ description To Switch2 (PC4, PC5)
+ ip address 156.11.224.129 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:3::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface Serial0/0/0
+ description To DCPE Se0/0/0
+ ip address 156.11.225.166 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:13::2/64
+ no shutdown
+!
+interface Serial0/0/1
+ description To SAFAD Se0/0/0
+ ip address 156.11.225.169 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:14::1/64
+ clock rate 128000
+ no shutdown
+!
+! ---- IPv4 standard static routes ----
+! via DCPE (156.11.225.165)
+ip route 156.11.224.0 255.255.255.192 156.11.225.165
+ip route 156.11.224.64 255.255.255.192 156.11.225.165
+ip route 156.11.225.128 255.255.255.240 156.11.225.165
+ip route 156.11.225.144 255.255.255.248 156.11.225.165
+ip route 156.11.225.152 255.255.255.252 156.11.225.165
+ip route 156.11.225.156 255.255.255.252 156.11.225.165
+ip route 156.11.225.160 255.255.255.252 156.11.225.165
+ip route 198.200.128.32 255.255.255.224 156.11.225.165
+ip route 200.158.224.64 255.255.255.240 156.11.225.165
+! via SAFAD (156.11.225.170)
+ip route 156.11.224.192 255.255.255.192 156.11.225.170
+ip route 156.11.225.0 255.255.255.192 156.11.225.170
+ip route 156.11.225.64 255.255.255.192 156.11.225.170
+ip route 156.11.225.172 255.255.255.252 156.11.225.170
+!
+! ---- IPv6 standard static routes ----
+! via DCPE (2001:DB8:ACAD:13::1)
+ipv6 route 2001:DB8:ACAD:1::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:2::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:7::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:8::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:10::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:11::/64 2001:DB8:ACAD:13::1
+ipv6 route 2001:DB8:ACAD:12::/64 2001:DB8:ACAD:13::1
+ipv6 route 2000:DB8:ACAD:128::/64 2001:DB8:ACAD:13::1
+ipv6 route 2000:DB8:ACAD:224::/64 2001:DB8:ACAD:13::1
+! via SAFAD (2001:DB8:ACAD:14::2)
+ipv6 route 2001:DB8:ACAD:4::/64 2001:DB8:ACAD:14::2
+ipv6 route 2001:DB8:ACAD:5::/64 2001:DB8:ACAD:14::2
+ipv6 route 2001:DB8:ACAD:6::/64 2001:DB8:ACAD:14::2
+ipv6 route 2001:DB8:ACAD:15::/64 2001:DB8:ACAD:14::2
+!
+! >>> now paste the MANAGEMENT BLOCK
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+=====================================================================
+ SAFAD ROUTER   (PC6, PC7 on Gig0/0)
+=====================================================================
+enable
+configure terminal
+hostname SAFAD
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface GigabitEthernet0/0
+ description To Switch3 (PC6, PC7)
+ ip address 156.11.224.193 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:4::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface Serial0/0/0
+ description To DCISM Se0/0/1
+ ip address 156.11.225.170 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:14::2/64
+ no shutdown
+!
+interface Serial0/0/1
+ description To SHCP Se0/0/0
+ ip address 156.11.225.173 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:15::1/64
+ clock rate 128000
+ no shutdown
+!
+! ---- IPv4 standard static routes ----
+! via SHCP (156.11.225.174)
+ip route 156.11.225.0 255.255.255.192 156.11.225.174
+ip route 156.11.225.64 255.255.255.192 156.11.225.174
+ip route 156.11.225.128 255.255.255.240 156.11.225.174
+ip route 156.11.225.144 255.255.255.248 156.11.225.174
+ip route 156.11.225.152 255.255.255.252 156.11.225.174
+ip route 156.11.225.156 255.255.255.252 156.11.225.174
+ip route 156.11.225.160 255.255.255.252 156.11.225.174
+ip route 198.200.128.32 255.255.255.224 156.11.225.174
+ip route 200.158.224.64 255.255.255.240 156.11.225.174
+! via DCISM (156.11.225.169)
+ip route 156.11.224.0 255.255.255.192 156.11.225.169
+ip route 156.11.224.64 255.255.255.192 156.11.225.169
+ip route 156.11.224.128 255.255.255.192 156.11.225.169
+ip route 156.11.225.164 255.255.255.252 156.11.225.169
+!
+! ---- IPv6 standard static routes ----
+! via SHCP (2001:DB8:ACAD:15::2)
+ipv6 route 2001:DB8:ACAD:5::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:6::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:7::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:8::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:10::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:11::/64 2001:DB8:ACAD:15::2
+ipv6 route 2001:DB8:ACAD:12::/64 2001:DB8:ACAD:15::2
+ipv6 route 2000:DB8:ACAD:128::/64 2001:DB8:ACAD:15::2
+ipv6 route 2000:DB8:ACAD:224::/64 2001:DB8:ACAD:15::2
+! via DCISM (2001:DB8:ACAD:14::1)
+ipv6 route 2001:DB8:ACAD:1::/64 2001:DB8:ACAD:14::1
+ipv6 route 2001:DB8:ACAD:2::/64 2001:DB8:ACAD:14::1
+ipv6 route 2001:DB8:ACAD:3::/64 2001:DB8:ACAD:14::1
+ipv6 route 2001:DB8:ACAD:13::/64 2001:DB8:ACAD:14::1
+!
+! >>> now paste the MANAGEMENT BLOCK
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+=====================================================================
+ SHCP ROUTER   (PC8, PC9 on Gig0/0 | PC10, PC11 on Gig0/1)
+=====================================================================
+enable
+configure terminal
+hostname SHCP
+no ip domain-lookup
+ipv6 unicast-routing
+!
+interface GigabitEthernet0/0
+ description To Switch5 (PC8, PC9)
+ ip address 156.11.225.1 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:5::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To Switch4 (PC10, PC11)
+ ip address 156.11.225.65 255.255.255.192
+ ipv6 address 2001:DB8:ACAD:6::1/64
+ ip helper-address 156.11.225.130
+ no shutdown
+!
+interface Serial0/0/1
+ description To IRM_Core Se0/0/0
+ ip address 156.11.225.162 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:12::2/64
+ clock rate 128000
+ no shutdown
+!
+interface Serial0/0/0
+ description To SAFAD Se0/0/1
+ ip address 156.11.225.174 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:15::2/64
+ no shutdown
+!
+! ---- IPv4 standard static routes ----
+! via Core (156.11.225.161)
+ip route 156.11.224.0 255.255.255.192 156.11.225.161
+ip route 156.11.224.64 255.255.255.192 156.11.225.161
+ip route 156.11.225.128 255.255.255.240 156.11.225.161
+ip route 156.11.225.144 255.255.255.248 156.11.225.161
+ip route 156.11.225.152 255.255.255.252 156.11.225.161
+ip route 156.11.225.156 255.255.255.252 156.11.225.161
+ip route 156.11.225.164 255.255.255.252 156.11.225.161
+ip route 198.200.128.32 255.255.255.224 156.11.225.161
+ip route 200.158.224.64 255.255.255.240 156.11.225.161
+! via SAFAD (156.11.225.173)
+ip route 156.11.224.128 255.255.255.192 156.11.225.173
+ip route 156.11.224.192 255.255.255.192 156.11.225.173
+ip route 156.11.225.168 255.255.255.252 156.11.225.173
+!
+! ---- IPv6 standard static routes ----
+! via Core (2001:DB8:ACAD:12::1)
+ipv6 route 2001:DB8:ACAD:1::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:2::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:7::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:8::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:10::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:11::/64 2001:DB8:ACAD:12::1
+ipv6 route 2001:DB8:ACAD:13::/64 2001:DB8:ACAD:12::1
+ipv6 route 2000:DB8:ACAD:128::/64 2001:DB8:ACAD:12::1
+ipv6 route 2000:DB8:ACAD:224::/64 2001:DB8:ACAD:12::1
+! via SAFAD (2001:DB8:ACAD:15::1)
+ipv6 route 2001:DB8:ACAD:3::/64 2001:DB8:ACAD:15::1
+ipv6 route 2001:DB8:ACAD:4::/64 2001:DB8:ACAD:15::1
+ipv6 route 2001:DB8:ACAD:14::/64 2001:DB8:ACAD:15::1
+!
+! >>> now paste the MANAGEMENT BLOCK
+
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+
+=====================================================================
+ MANAGEMENT BLOCK - paste on EVERY router (ISP, IRM_Core, DCPE,
+ DCISM, SAFAD, SHCP) right after its section above.
+ Only the Admin Laptop (156.11.225.146 / 2001:DB8:ACAD:8::2) may Telnet in.
+ Change the passwords if your instructor gave specific ones.
+=====================================================================
+service password-encryption
+enable secret cisco
+username admin privilege 15 secret cisco
+banner motd #Authorized access only#
+!
+ip access-list standard VTY_ADMIN
+ permit host 156.11.225.146
+ deny any
+!
+ipv6 access-list VTY_ADMIN_V6
+ permit ipv6 host 2001:DB8:ACAD:8::2 any
+!
+line vty 0 4
+ login local
+ transport input telnet
+ access-class VTY_ADMIN in
+ ipv6 access-class VTY_ADMIN_V6 in
+ exec-timeout 10 0
+!
+end
+write memory
+
+
+=====================================================================
+ SERVER SERVICES (Services tab in Packet Tracer)
+=====================================================================
+ IRM TNS Server -> DHCP (Service ON). Delete/ignore the default serverPool.
+   Pool name     Default gateway   DNS server       Start IP         Subnet mask       Max users   Range handed out
+   DCPE_LAN_A    156.11.224.1      156.11.225.130   156.11.224.11    255.255.255.192   52          .11 - .62
+   DCPE_LAN_B    156.11.224.65     156.11.225.130   156.11.224.75    255.255.255.192   52          .75 - .126
+   DCISM_LAN     156.11.224.129    156.11.225.130   156.11.224.139   255.255.255.192   52          .139 - .190
+   SAFAD_LAN     156.11.224.193    156.11.225.130   156.11.224.203   255.255.255.192   52          .203 - .254
+   SHCP_LAN_A    156.11.225.1      156.11.225.130   156.11.225.11    255.255.255.192   52          .11 - .62
+   SHCP_LAN_B    156.11.225.65     156.11.225.130   156.11.225.75    255.255.255.192   52          .75 - .126
+
+ IRM TNS Server -> DNS (Service ON). Add these records:
+   www.cisco.com   A      198.200.128.34
+   www.google.com  A      200.158.224.66
+   (optional) www.cisco.com AAAA 2000:DB8:ACAD:128::2 , www.google.com AAAA 2000:DB8:ACAD:224::2
+
+ Cisco Server  -> HTTP (Service ON). Edit index.html so the page says "Cisco".
+ Google Server -> HTTP (Service ON). Edit index.html so the page says "Google".
+
+
+=====================================================================
+ VERIFY (objective 8)
+=====================================================================
+ PCs      : ipconfig /all  (IPv4 from the right pool, IPv6 from the SLAAC prefix)
+            ping 156.11.225.130 ; ping www.cisco.com ; ping www.google.com
+            Web Browser -> http://www.cisco.com and http://www.google.com
+ Admin Laptop (Command Prompt) - Telnet to every router, login admin / Admin@123:
+            telnet 156.11.225.153   (ISP)
+            telnet 156.11.225.145   (IRM_Core)
+            telnet 156.11.224.1     (DCPE)
+            telnet 156.11.224.129   (DCISM)
+            telnet 156.11.224.193   (SAFAD)
+            telnet 156.11.225.1     (SHCP)
+ Routers  : show ip route | show ipv6 route | show ip interface brief
+            show running-config | section line vty
+ Troubleshooting: ping, traceroute (tracert on PCs), show ip route, show ipv6 route
