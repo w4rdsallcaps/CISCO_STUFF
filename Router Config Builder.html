@@ -1,0 +1,891 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Router Config Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: form on the left, live IOS output pinned on the right; stacks to one column on phones. */
+:root{
+  /* Palette: white and soft grey, one blue accent. */
+  --bg:#f7f8fa; --surface:#ffffff; --surface2:#f3f4f6; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#2563eb; --accent-ink:#ffffff; --warn:#b42318; --warn-bg:#fef3f2; --note:#4b5563;
+  --term-bg:#0f172a; --term-fg:#e2e8f0; --term-dim:#94a3b8; --term-key:#7dd3fc; --term-line:#1e293b;
+  --display:'Inter',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--body);
+  padding-block:20px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1260px;margin:0 auto}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.top h1{font:700 28px/1.15 var(--display);margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
+.top p{margin:0;color:var(--muted);max-width:62ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:500 13px/1 var(--body);cursor:pointer;border-radius:7px;padding:9px 13px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button:hover{border-color:var(--accent)}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.ghost{background:transparent;color:var(--muted)}
+button.ghost:hover{color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.jump{display:none}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+@media (min-width:1020px){
+  .layout{grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);align-items:start}
+  .out{position:sticky;top:16px;max-height:calc(100vh - 32px)}
+}
+@media (max-width:1019px){.jump{display:inline-block}}
+.form{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+.card h2{font:600 17px/1.2 var(--display);margin:0 0 2px;color:var(--ink)}
+.card .sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+.l{font-size:12px;font-weight:500;color:var(--muted)}
+.h{font-size:11.5px;color:var(--muted)}
+input[type=text],input[type=number],select{width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:14px var(--body)}
+input.mono{font-family:var(--mono);font-size:13px}
+.chk{display:flex;gap:8px;align-items:center;min-height:36px;font-size:13.5px}
+.chk input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.checks{display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:12px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.seg label{display:block;position:relative}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:block;padding:9px 15px;font-size:13px;font-weight:500;color:var(--muted);background:var(--surface)}
+.seg label+label span{border-left:1px solid var(--line)}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-2px}
+.if,.st{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+.if-head{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.if-title{min-width:0;flex:1}
+.if-title input{max-width:230px;font:600 15px var(--mono);height:34px}
+.portrow{display:flex;flex-wrap:wrap;gap:8px}
+.portsel{width:auto;min-width:150px;font:600 14px var(--mono);height:34px}
+.info{display:block;margin-top:4px;font:12px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.sep{grid-column:1/-1;height:1px;background:var(--line);margin:2px 0}
+.empty{color:var(--muted);font-size:13px;margin:0 0 12px}
+.pill{display:inline-block;font:600 11px var(--body);letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+::placeholder{color:#9ca3af;opacity:1}
+.qa{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.adv{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.adv div{font-size:13px}
+.adv b{color:var(--accent);margin-right:6px}
+.adv code{display:inline-block;font:12px var(--mono);background:var(--surface2);border:1px solid var(--line);padding:2px 7px;border-radius:5px;margin:0 5px 4px 0}
+/* output */
+.out{display:flex;flex-direction:column;min-width:0;border-radius:10px;overflow:hidden;background:var(--term-bg);border:1px solid var(--term-line)}
+.out-h{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--term-line);color:var(--term-fg)}
+.out-h strong{font:600 15px var(--display)}
+.out-h small{color:var(--term-dim);margin-left:8px;font:12px var(--mono)}
+.out-h .chk{color:var(--term-fg);font-size:12.5px;min-height:0}
+.out-h .rt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.out-h button{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.notes{list-style:none;margin:0;padding:10px 14px;border-bottom:1px solid var(--term-line);display:flex;flex-direction:column;gap:5px;font-size:12.5px;max-height:170px;overflow:auto;background:var(--surface)}
+.notes:empty{display:none}
+.notes li{color:var(--note)}
+.notes li b{font-weight:600;margin-right:6px}
+.notes li.warn{color:var(--warn)}
+pre{margin:0;padding:14px;font:12.5px/1.6 var(--mono);color:var(--term-fg);overflow:auto;flex:1;min-height:200px;white-space:pre;tab-size:2}
+pre .c{color:var(--term-dim)}
+pre .g{color:var(--term-key)}
+.verify{border-top:1px solid var(--term-line);padding:12px 14px;color:var(--term-fg)}
+.verify h3{font:600 13px var(--display);margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.verify h3 button{background:transparent;color:var(--term-fg);border-color:var(--term-line);padding:6px 10px;font-size:12px}
+.verify code{display:inline-block;font:12px var(--mono);background:rgba(125,211,252,.12);padding:3px 8px;border-radius:5px;margin:0 6px 6px 0;color:var(--term-key)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,120px) auto;gap:8px;margin-bottom:8px}
+.prow input{min-width:0}
+.scroll{overflow-x:auto}
+.ptbl{width:100%;border-collapse:collapse;font-size:13px}
+.ptbl th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.ptbl td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line);font:12.5px var(--mono);white-space:nowrap}
+.assign{display:flex;gap:6px;align-items:center}
+.assign select{height:32px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:13px var(--body);padding:0 6px;max-width:150px}
+.assign button{padding:7px 10px}
+.warnbox{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;margin-top:10px}
+.rbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.rtab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.rtab.add{border-style:dashed;color:var(--accent);background:transparent}
+.assign{flex-wrap:wrap}
+.assign input{width:76px;height:32px}
+.okbox{background:var(--surface2);color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-top:10px}
+/* steps */
+.num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:600 12px var(--body);margin-right:9px;vertical-align:2px}
+details.card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"+";margin-left:auto;color:var(--muted);font-size:18px;line-height:1}
+details.card[open]>summary::after{content:"\2013"}
+details.card>summary h2{margin:0}
+details.card[open]>summary{margin-bottom:6px}
+.sec-h{font:600 15px var(--display);margin:22px 0 2px;color:var(--ink)}
+.hostno{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){button{transition:border-color .12s,color .12s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Router Config Builder</h1>
+      <p>Work through the steps from top to bottom: plan your network, set up your routers, give each subnet to a port, pick routing, then copy the Cisco IOS commands on the right.</p>
+    </div>
+    <div class="actions">
+      <span class="pill" id="pill" hidden>Example data</span>
+      <button class="jump pri" data-act="jump">Jump to config</button>
+      <button data-act="example">Load example</button>
+      <button data-act="clear">Clear all</button>
+    </div>
+  </header>
+  <main class="layout">
+    <div class="form" id="form"></div>
+    <aside class="out" id="out" aria-label="Generated configuration">
+      <div class="out-h">
+        <div><strong>IOS config</strong><small id="count"></small></div>
+        <div class="rt">
+          <label class="chk"><input type="checkbox" id="cmt" data-scope="opts" data-k="comments"><span>Comments</span></label>
+          <button data-act="copy" id="copyBtn" aria-live="polite">Copy config</button>
+        </div>
+      </div>
+      <ul class="notes" id="notes"></ul>
+      <pre id="pre" tabindex="0"></pre>
+      <div class="verify" id="verify"></div>
+    </aside>
+  </main>
+</div>
+<datalist id="ports"></datalist>
+
+<script>
+(function(){
+'use strict';
+var KEY='router-config-builder-v2',OLD_KEY='router-config-builder-v1';
+var PORTS=['g0/0','g0/1','g0/2','s0/0/0','s0/1/0','s0/2/0','s0/3/0'];
+var PORT_OPTS=PORTS.map(function(p){return '<option value="'+p+'">'+p+'</option>'}).join('')+'<option value="__custom">Other or loopback...</option>';
+function uid(){return Math.random().toString(36).slice(2,9)}
+
+/* ---------- address helpers ---------- */
+function v4int(s){var m=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec((s||'').trim());if(!m)return null;var n=0;for(var i=1;i<=4;i++){var o=+m[i];if(o>255)return null;n=n*256+o}return n}
+function v4str(n){return [n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join('.')}
+function cidrMask(c){return c===0?0:((0xFFFFFFFF<<(32-c))>>>0)}
+function maskCidr(m){var c=0,z=false;for(var i=31;i>=0;i--){var b=(m>>>i)&1;if(b){if(z)return null;c++}else z=true}return c}
+function parseV4(s){
+  s=(s||'').trim();if(!s)return null;var ip,mask,m=/^(\S+)\s*\/\s*(\d{1,2})$/.exec(s);
+  if(m){ip=v4int(m[1]);var c=+m[2];if(ip===null||c>32)return null;mask=cidrMask(c)}
+  else{m=/^(\S+)\s+(\S+)$/.exec(s);if(!m)return null;ip=v4int(m[1]);mask=v4int(m[2]);if(ip===null||mask===null||maskCidr(mask)===null)return null}
+  var net=(ip&mask)>>>0,wild=(~mask)>>>0;
+  return {ip:ip,mask:mask,cidr:maskCidr(mask),net:net,wild:wild,bcast:(net|wild)>>>0};
+}
+function v6expand(a){
+  a=(a||'').trim().toLowerCase();if(!a||!/^[0-9a-f:]+$/.test(a))return null;
+  var d=a.split('::');if(d.length>2)return null;
+  var pr=function(p){return p===''?[]:p.split(':')};
+  var head=pr(d[0]),tail=d.length===2?pr(d[1]):[],all;
+  if(d.length===1){if(head.length!==8)return null;all=head}
+  else{if(head.length+tail.length>7)return null;all=head.concat(Array(8-head.length-tail.length).fill('0'),tail)}
+  var out=[];for(var i=0;i<all.length;i++){if(!/^[0-9a-f]{1,4}$/.test(all[i]))return null;out.push(parseInt(all[i],16))}
+  return out.length===8?out:null;
+}
+function v6compress(g){
+  var h=g.map(function(x){return x.toString(16)}),best=-1,bl=0,i=0;
+  while(i<8){if(g[i]===0){var j=i;while(j<8&&g[j]===0)j++;if(j-i>bl){bl=j-i;best=i}i=j}else i++}
+  if(bl<2)return h.join(':');
+  return h.slice(0,best).join(':')+'::'+h.slice(best+bl).join(':');
+}
+function parseV6(s){
+  s=(s||'').trim();if(!s)return null;var m=/^([0-9a-fA-F:]+)\/(\d{1,3})$/.exec(s);if(!m)return null;
+  var p=+m[2];if(p>128)return null;var g=v6expand(m[1]);if(!g)return null;
+  var n=g.map(function(x,i){var bits=Math.max(0,Math.min(16,p-i*16));if(bits===0)return 0;if(bits===16)return x;return x&((0xFFFF<<(16-bits))&0xFFFF)});
+  return {g:g,p:p,net:v6compress(n)};
+}
+function isLoop(n){return /^lo/i.test((n||'').trim())}
+function isCustomName(f){return !!f.custom||PORTS.indexOf((f.name||'').trim())===-1}
+function poolName(n){return (n||'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').toUpperCase()}
+function classful(n){var o=n>>>24;if(o<128)return (n&0xFF000000)>>>0;if(o<192)return (n&0xFFFF0000)>>>0;return (n&0xFFFFFF00)>>>0}
+function leasable(x){
+  var v=x.v4;if(!v||v.cidr>30)return null;var lo=v.net+1,hi=v.bcast-1,ex={};ex[v.ip]=1;
+  var a=v4int(x.f.exFrom),z=(x.f.exTo||'').trim()?v4int(x.f.exTo):a;
+  if(a!==null&&z!==null&&z>=a){for(var i=a;i<=z&&i-a<4096;i++)ex[i]=1}
+  var n=0;Object.keys(ex).forEach(function(k){k=+k;if(k>=lo&&k<=hi)n++});
+  return {total:hi-lo+1,excluded:n,leasable:hi-lo+1-n};
+}
+
+/* ---------- state ---------- */
+function newIface(o){return Object.assign({id:uid(),name:'',custom:false,desc:'',ip:'',v6:'',ll:'',proto:'none',area:'0',passive:false,dhcp4:false,exFrom:'',exTo:'',v6mode:'none',dce:false,clock:'64000',nat:'none',up:true},o||{})}
+function newStatic(o){return Object.assign({id:uid(),fam:'4',dest:'',nh:'',exit:'',ad:''},o||{})}
+function defaults(){return {
+  basic:{hostname:'Router',domain:'',banner:'',secret:'',conpass:'',encrypt:true,nolookup:true,v6:true},
+  acc:{mode:'ssh',user:'admin',pass:'',modulus:'2048',from:'0',to:'4',login:'local',vtypass:''},
+  ospf:{pid:'1',rid:'',defOrig:false},rip:{name:'RIPNG'},eigrp:{as:'100',rid:''},
+  dhcp:{dns4:'',dns6:'',domain:'',lease:''},nat:{enabled:false,acl:'1'},opts:{comments:true,save:false},meta:{example:false},
+  ifaces:[newIface({name:'g0/0'}),newIface({name:'g0/1'})],statics:[],redist:{ospfRip:false,ospfEigrp:false,ripEigrp:false},
+  planner:{base:'192.168.0.0',prefix:'24',mode:'vlsm',sby:'count',sval:'4',nth:'1',reqs:[{name:'LAN-A',hosts:'100'},{name:'LAN-B',hosts:'50'},{name:'Link-1',hosts:'2'}]}};}
+function example(){var s=defaults();
+  s.basic={hostname:'SAFAD_RTR',domain:'left.com',banner:'DO NOT TOUCH THIS ROUTER UNLESS TOLD OTHERWISE BY ADMIN',secret:'cisco',conpass:'cisco',encrypt:true,nolookup:true,v6:true};
+  s.acc={mode:'ssh',user:'admin',pass:'cisco',modulus:'2048',from:'0',to:'5',login:'local',vtypass:''};
+  s.dhcp={dns4:'8.8.8.8',dns6:'2001:4860:4860::8888',domain:'',lease:''};
+  s.meta.example=true;
+  s.ifaces=[
+    newIface({name:'g0/0',desc:'LAN-A',ip:'194.4.204.1/29',v6:'2004:db4:acad:a::1/64',ll:'fe80::1',proto:'ospf',passive:true,dhcp4:true,exFrom:'194.4.204.2',v6mode:'stateless'}),
+    newIface({name:'g0/1',desc:'LAN-B',ip:'194.4.204.9/29',v6:'2004:db4:acad:b::1/64',ll:'fe80::1',proto:'ospf',passive:true,dhcp4:true,exFrom:'194.4.204.10',v6mode:'stateless'}),
+    newIface({name:'s0/0/0',desc:'Link-1',ip:'10.0.0.1/30',v6:'2001:db8:acad:1::1/64',ll:'fe80::1',proto:'ospf',dce:true}),
+    newIface({name:'s0/1/0',desc:'Link-2',ip:'10.0.0.5/30',v6:'2001:db8:acad:2::1/64',ll:'fe80::1',proto:'ospf'}),
+    newIface({name:'lo0',desc:'Loopback',ip:'1.1.1.1/32',v6:'2001:db8:acad:ff::1/128',proto:'ospf'})];
+  return s;}
+
+/* ---------- generator ---------- */
+function generate(S){
+  var L=[],W=[],cmOn=S.opts.comments;
+  function bad(m){W.push({t:'warn',m:m})}function note(m){W.push({t:'note',m:m})}
+  function sec(t){if(cmOn){L.push('!');L.push('! '+t)}}
+  var b=S.basic,a=S.acc,host=(b.hostname||'').trim(),dom=(b.domain||'').trim();
+  L.push('enable','configure terminal');
+  sec('Basics');
+  if(host){if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(host))bad('Hostname should start with a letter and use only letters, digits, - or _.');L.push('hostname '+host)}else bad('Enter a hostname.');
+  if(dom)L.push('ip domain-name '+dom);
+  if(b.nolookup)L.push('no ip domain-lookup');
+  if(b.v6)L.push('ipv6 unicast-routing');
+  if(b.secret)L.push('enable secret '+b.secret);else note('No enable secret is set, so privileged mode has no password.');
+  if(b.encrypt)L.push('service password-encryption');
+  if((b.banner||'').trim())L.push('banner motd #'+b.banner.replace(/#/g,'').trim()+'#');
+  L.push('line console 0');
+  if(b.conpass)L.push(' password '+b.conpass,' login');
+  L.push(' logging synchronous',' exit');
+
+  sec('Remote access');
+  if(a.mode!=='none'){
+    var needLocal=a.mode!=='telnet'||a.login==='local';
+    if(needLocal){if(a.user&&a.pass)L.push('username '+a.user+' secret '+a.pass);else bad('Remote access needs a username and password.')}
+    if(a.mode!=='telnet'){
+      if(!dom)bad('SSH needs a domain name in Basics before the RSA keys can be created.');
+      L.push('crypto key generate rsa general-keys modulus '+a.modulus,'ip ssh version 2');
+    }
+    if(a.mode==='telnet')note('Telnet sends passwords as plain text. Use SSH outside a lab.');
+  }
+  L.push('line vty '+(a.from||'0')+' '+(a.to||'4'));
+  if(a.mode==='none')L.push(' transport input none');
+  else{
+    if(a.mode!=='telnet'||a.login==='local')L.push(' login local');
+    else{if(a.vtypass)L.push(' password '+a.vtypass,' login');else bad('Enter a VTY line password for Telnet.')}
+    L.push(' transport input '+(a.mode==='ssh'?'ssh':a.mode==='telnet'?'telnet':'ssh telnet'));
+  }
+  L.push(' exit');
+
+  /* interfaces */
+  var ifs=S.ifaces.map(function(f){return {f:f,name:(f.name||'').trim(),v4:parseV4(f.ip),v6:parseV6(f.v6),ll:(f.ll||'').trim()}})
+    .filter(function(x){return x.name||(x.f.ip||'').trim()||(x.f.v6||'').trim()});
+  var seen={},anyV6=false;
+  ifs.forEach(function(x){
+    var n=x.name||'(unnamed)';
+    if(!x.name)bad('An interface has addresses but no port name.');
+    if(seen[n.toLowerCase()])bad(n+' is listed twice.');seen[n.toLowerCase()]=1;
+    if((x.f.ip||'').trim()&&!x.v4)bad(n+': IPv4 address is not valid. Use 192.168.1.1/24 or 192.168.1.1 255.255.255.0.');
+    if((x.f.v6||'').trim()&&!x.v6)bad(n+': IPv6 address is not valid. Use a form like 2001:db8:1::1/64.');
+    if(x.ll){var g=v6expand(x.ll);if(!g||(g[0]&0xffc0)!==0xfe80)bad(n+': link-local address must be inside fe80::/10, for example fe80::1.')}
+    if(x.f.proto!=='none'&&!x.v4&&!x.v6)bad(n+': add an address before choosing a routing protocol.');
+    if(x.v6||x.ll)anyV6=true;
+    x.p4='LAN-'+poolName(x.name);x.p6='LAN-'+poolName(x.name)+'-V6';
+  });
+  for(var i=0;i<ifs.length;i++)for(var j=i+1;j<ifs.length;j++){
+    var p=ifs[i].v4,q=ifs[j].v4;if(!p||!q)continue;var m=cidrMask(Math.min(p.cidr,q.cidr));
+    if(((p.net&m)>>>0)===((q.net&m)>>>0))bad(ifs[i].name+' and '+ifs[j].name+' have overlapping IPv4 networks.');
+  }
+  if(anyV6&&!b.v6)note('IPv6 addresses are set but IPv6 routing is off in Basics. Routing and router advertisements need it.');
+
+  /* DHCP */
+  var d=S.dhcp,dnsDom=(d.domain||dom||'').trim();
+  var dns4=(d.dns4||'').split(/[\s,]+/).filter(Boolean),dns6=(d.dns6||'').split(/[\s,]+/).filter(Boolean);
+  dns4.forEach(function(s){if(v4int(s)===null)bad('DNS server "'+s+'" is not a valid IPv4 address.')});
+  dns6.forEach(function(s){if(!v6expand(s))bad('DNS server "'+s+'" is not a valid IPv6 address.')});
+  var dh4=ifs.filter(function(x){return x.f.dhcp4&&!isLoop(x.name)});
+  if(dh4.length){
+    sec('DHCPv4 excluded addresses and pools');
+    dh4.forEach(function(x){
+      if(!x.v4){bad(x.name+': DHCP needs a valid IPv4 address.');return}
+      if(x.v4.cidr>30){bad(x.name+': a /'+x.v4.cidr+' network has no host addresses to lease.');return}
+      var lo=x.v4.net+1,hi=x.v4.bcast-1;
+      L.push('ip dhcp excluded-address '+v4str(x.v4.ip));
+      var fr=(x.f.exFrom||'').trim(),to=(x.f.exTo||'').trim();
+      if(fr){
+        var A=v4int(fr),Z=to?v4int(to):A;
+        if(A===null||Z===null||Z<A)bad(x.name+': the excluded range is not valid.');
+        else if(A<lo||Z>hi)bad(x.name+': the excluded range is outside '+v4str(x.v4.net)+'/'+x.v4.cidr+'.');
+        else L.push('ip dhcp excluded-address '+v4str(A)+(Z!==A?' '+v4str(Z):''));
+      }
+      var lz=leasable(x);if(lz&&lz.leasable<=0)bad(x.name+': every address is excluded, so DHCP has nothing to lease.');
+      L.push('ip dhcp pool '+x.p4,' network '+v4str(x.v4.net)+' '+v4str(x.v4.mask),' default-router '+v4str(x.v4.ip));
+      if(dns4.length)L.push(' dns-server '+dns4.join(' '));
+      if(dnsDom)L.push(' domain-name '+dnsDom);
+      if((d.lease||'').trim())L.push(' lease '+d.lease.trim());
+      L.push(' exit');
+    });
+  }
+  var dh6=ifs.filter(function(x){return x.f.v6mode&&x.f.v6mode!=='none'&&!isLoop(x.name)});
+  if(dh6.length){
+    sec('DHCPv6 pools');
+    dh6.forEach(function(x){
+      if(!x.v6){bad(x.name+': DHCPv6 needs a valid IPv6 address.');return}
+      L.push('ipv6 dhcp pool '+x.p6);
+      if(x.f.v6mode==='stateful')L.push(' address prefix '+x.v6.net+'/'+x.v6.p);
+      dns6.forEach(function(s){L.push(' dns-server '+s)});
+      if(dnsDom)L.push(' domain-name '+dnsDom);
+      L.push(' exit');
+      if(!dns6.length&&x.f.v6mode==='stateless')note(x.name+': stateless DHCPv6 is on but no IPv6 DNS server is set.');
+    });
+  }
+
+  /* interface blocks */
+  sec('Interfaces');
+  var rip6=(S.rip.name||'RIPNG').trim(),ospfPid=(S.ospf.pid||'1').trim(),eAs=(S.eigrp.as||'100').trim();
+  ifs.forEach(function(x){
+    var f=x.f;
+    L.push('interface '+x.name);
+    if((f.desc||'').trim())L.push(' description '+f.desc.trim());
+    if(x.v4)L.push(' ip address '+v4str(x.v4.ip)+' '+v4str(x.v4.mask));
+    if(S.nat.enabled&&f.nat!=='none'&&!isLoop(x.name))L.push(' ip nat '+f.nat);
+    if(x.v6)L.push(' ipv6 address '+(f.v6||'').trim());
+    if(x.ll)L.push(' ipv6 address '+x.ll+' link-local');
+    if(!x.v6&&x.ll)L.push(' ipv6 enable');
+    if(f.v6mode==='stateless'&&x.v6&&!isLoop(x.name))L.push(' ipv6 nd other-config-flag',' ipv6 dhcp server '+x.p6);
+    if(f.v6mode==='stateful'&&x.v6&&!isLoop(x.name))L.push(' ipv6 nd managed-config-flag',' ipv6 dhcp server '+x.p6);
+    if(f.proto==='ospf'&&(x.v6||x.ll))L.push(' ipv6 ospf '+ospfPid+' area '+((f.area||'0').trim()));
+    if(f.proto==='rip'&&(x.v6||x.ll))L.push(' ipv6 rip '+rip6+' enable');
+    if(f.proto==='eigrp'&&(x.v6||x.ll))L.push(' ipv6 eigrp '+eAs);
+    if(/^s/i.test(x.name)&&f.dce)L.push(' clock rate '+((f.clock||'64000').trim()));
+    L.push(f.up?' no shutdown':' shutdown');
+    L.push(' exit');
+  });
+
+  /* routing */
+  function rid(v,label){if((v||'').trim()&&v4int(v)===null){bad(label+' router ID must look like an IPv4 address, for example 1.1.1.1.');return ''}return (v||'').trim()}
+  var ospfI=ifs.filter(function(x){return x.f.proto==='ospf'}),ripI=ifs.filter(function(x){return x.f.proto==='rip'}),eigI=ifs.filter(function(x){return x.f.proto==='eigrp'});
+  var uses={ospf:ospfI.length>0,rip:ripI.length>0,eigrp:eigI.length>0};
+  var RD=S.redist||{},rdOut={ospf:[],rip:[],eigrp:[]},rdOk={ospf:ospfI.some(function(x){return x.v4}),rip:ripI.some(function(x){return x.v4}),eigrp:eigI.some(function(x){return x.v4})};
+  function rdCmd(src,into){
+    if(src==='ospf')return into==='rip'?' redistribute ospf '+ospfPid+' metric 2':' redistribute ospf '+ospfPid+' metric 10000 100 255 1 1500';
+    if(src==='rip')return into==='ospf'?' redistribute rip subnets':' redistribute rip metric 10000 100 255 1 1500';
+    return into==='ospf'?' redistribute eigrp '+eAs+' subnets':' redistribute eigrp '+eAs+' metric 2';
+  }
+  [['ospfRip','ospf','rip'],['ospfEigrp','ospf','eigrp'],['ripEigrp','rip','eigrp']].forEach(function(p){
+    if(!RD[p[0]])return;
+    if(!rdOk[p[1]]||!rdOk[p[2]]){bad('Redistribution needs IPv4 on both '+p[1].toUpperCase()+' and '+p[2].toUpperCase()+' ports.');return}
+    rdOut[p[1]].push(rdCmd(p[2],p[1]));rdOut[p[2]].push(rdCmd(p[1],p[2]));
+  });
+  if(ospfI.length){
+    sec('OSPF (IPv4 and IPv6)');
+    var orid=rid(S.ospf.rid,'OSPF');
+    if(ospfI.some(function(x){return x.v4})){
+      L.push('router ospf '+ospfPid);if(orid)L.push(' router-id '+orid);
+      ospfI.forEach(function(x){if(x.v4)L.push(' network '+v4str(x.v4.net)+' '+v4str(x.v4.wild)+' area '+((x.f.area||'0').trim()))});
+      ospfI.forEach(function(x){if(x.f.passive&&x.v4)L.push(' passive-interface '+x.name)});
+      rdOut.ospf.forEach(function(l){L.push(l)});
+      if(S.ospf.defOrig)L.push(' default-information originate');
+      L.push(' exit');
+    }
+    if(ospfI.some(function(x){return x.v6||x.ll})){
+      L.push('ipv6 router ospf '+ospfPid);
+      if(orid)L.push(' router-id '+orid);else if(!ospfI.some(function(x){return x.v4}))bad('OSPFv3 needs an OSPF router ID when the router has no IPv4 address.');
+      ospfI.forEach(function(x){if(x.f.passive&&(x.v6||x.ll))L.push(' passive-interface '+x.name)});
+      if(S.ospf.defOrig)L.push(' default-information originate');
+      L.push(' exit');
+    }
+  }
+  if(ripI.length){
+    sec('RIP version 2 and RIPng');
+    if(ripI.some(function(x){return x.v4})){
+      L.push('router rip',' version 2',' no auto-summary');
+      var seenN={};ripI.forEach(function(x){if(x.v4){var cn=v4str(classful(x.v4.net));if(!seenN[cn]){seenN[cn]=1;L.push(' network '+cn)}}});
+      ripI.forEach(function(x){if(x.f.passive&&x.v4)L.push(' passive-interface '+x.name)});
+      rdOut.rip.forEach(function(l){L.push(l)});
+      L.push(' exit');
+    }
+    if(ripI.some(function(x){return x.v6||x.ll}))L.push('ipv6 router rip '+rip6,' exit');
+  }
+  if(eigI.length){
+    sec('EIGRP (IPv4 and IPv6)');
+    var erid=rid(S.eigrp.rid,'EIGRP');
+    if(eigI.some(function(x){return x.v4})){
+      L.push('router eigrp '+eAs);if(erid)L.push(' eigrp router-id '+erid);
+      eigI.forEach(function(x){if(x.v4)L.push(' network '+v4str(x.v4.net)+' '+v4str(x.v4.wild))});
+      eigI.forEach(function(x){if(x.f.passive&&x.v4)L.push(' passive-interface '+x.name)});
+      rdOut.eigrp.forEach(function(l){L.push(l)});
+      L.push(' no auto-summary',' exit');
+    }
+    if(eigI.some(function(x){return x.v6||x.ll})){
+      L.push('ipv6 router eigrp '+eAs);
+      if(erid)L.push(' eigrp router-id '+erid);else if(!eigI.some(function(x){return x.v4}))bad('IPv6 EIGRP needs a router ID when the router has no IPv4 address.');
+      eigI.forEach(function(x){if(x.f.passive&&(x.v6||x.ll))L.push(' passive-interface '+x.name)});
+      L.push(' no shutdown',' exit');
+    }
+  }
+
+  /* static routes */
+  var stLines=[];
+  S.statics.forEach(function(r){
+    var dest=(r.dest||'').trim(),nh=(r.nh||'').trim(),ex=(r.exit||'').trim(),ad=(r.ad||'').trim();
+    if(!dest&&!nh&&!ex)return;
+    if(ad&&!/^\d{1,3}$/.test(ad)){bad('Static route '+dest+': administrative distance must be 1 to 255.');return}
+    if(r.fam==='4'){
+      var dd=parseV4(dest);if(!dd){bad('Static route "'+dest+'": destination is not valid. Use 0.0.0.0/0 or 10.1.0.0 255.255.0.0.');return}
+      if(nh&&v4int(nh)===null){bad('Static route '+dest+': next hop is not a valid IPv4 address.');return}
+      if(!nh&&!ex){bad('Static route '+dest+': add a next hop or an exit interface.');return}
+      stLines.push(('ip route '+v4str(dd.net)+' '+v4str(dd.mask)+' '+ex+' '+nh+' '+ad).replace(/\s+/g,' ').trim());
+    }else{
+      var d6=parseV6(dest);if(!d6){bad('Static route "'+dest+'": destination is not valid. Use ::/0 or 2001:db8:1::/64.');return}
+      var g=nh?v6expand(nh):null;
+      if(nh&&!g){bad('Static route '+dest+': next hop is not a valid IPv6 address.');return}
+      if(!nh&&!ex){bad('Static route '+dest+': add a next hop or an exit interface.');return}
+      if(g&&(g[0]&0xffc0)===0xfe80&&!ex){bad('Static route '+dest+': a link-local next hop also needs an exit interface.');return}
+      stLines.push(('ipv6 route '+d6.net+'/'+d6.p+' '+ex+' '+nh+' '+ad).replace(/\s+/g,' ').trim());
+    }
+  });
+  if(stLines.length){sec('Static routes');stLines.forEach(function(s){L.push(s)})}
+
+  /* NAT */
+  if(S.nat.enabled){
+    var ins=ifs.filter(function(x){return x.f.nat==='inside'&&x.v4}),outs=ifs.filter(function(x){return x.f.nat==='outside'});
+    var acl=(S.nat.acl||'1').trim();
+    if(!/^\d{1,2}$/.test(acl)||+acl<1)bad('NAT access list number must be 1 to 99.');
+    else if(!ins.length||!outs.length)bad('NAT needs at least one inside and one outside interface.');
+    else{
+      sec('NAT overload (PAT)');
+      ins.forEach(function(x){L.push('access-list '+acl+' permit '+v4str(x.v4.net)+' '+v4str(x.v4.wild))});
+      L.push('ip nat inside source list '+acl+' interface '+outs[0].name+' overload');
+      if(outs.length>1)note('Only '+outs[0].name+' is used for overload. Add more NAT lines for the other outside ports.');
+    }
+  }
+  L.push('end');
+  if(S.opts.save){
+    sec('Save to NVRAM');
+    L.push('write memory','copy running-config startup-config');
+    if(cmOn)L.push('! Press Enter at the filename prompt to confirm.');
+  }
+
+  /* networks advertised automatically from the connected ports */
+  function advList(arr,cls){
+    var out=[],seen={};
+    arr.forEach(function(x){if(x.v4){var s=cls?v4str(classful(x.v4.net)):v4str(x.v4.net)+'/'+x.v4.cidr;if(!seen[s]){seen[s]=1;out.push(s)}}});
+    arr.forEach(function(x){if(x.v6){var s=x.v6.net+'/'+x.v6.p;if(!seen[s]){seen[s]=1;out.push(s)}}});
+    return out;
+  }
+  var adv=[];
+  if(ospfI.length)adv.push({p:'OSPF',n:advList(ospfI,false)});
+  if(ripI.length)adv.push({p:'RIP',n:advList(ripI,true)});
+  if(eigI.length)adv.push({p:'EIGRP',n:advList(eigI,false)});
+
+  /* checks to run */
+  var V=['show ip interface brief'];
+  if(anyV6)V.push('show ipv6 interface brief');
+  V.push('show ip route');if(anyV6)V.push('show ipv6 route');
+  if(uses.ospf){V.push('show ip ospf neighbor');if(anyV6)V.push('show ipv6 ospf neighbor')}
+  if(uses.eigrp){V.push('show ip eigrp neighbors');if(anyV6)V.push('show ipv6 eigrp neighbors')}
+  if(uses.rip){V.push('show ip rip database');if(anyV6)V.push('show ipv6 rip database')}
+  if(uses.ospf||uses.rip||uses.eigrp)V.push('show ip protocols');
+  if(dh4.length)V.push('show ip dhcp binding','show ip dhcp pool');
+  if(dh6.length)V.push('show ipv6 dhcp pool','show ipv6 dhcp binding');
+  if(S.nat.enabled)V.push('show ip nat translations');
+  if(a.mode==='ssh'||a.mode==='both')V.push('show ip ssh');
+  if(a.mode!=='none')V.push('show users');
+  V.push('show running-config');
+  return {lines:L,warns:W,verify:V,adv:adv};
+}
+
+/* ---------- UI ---------- */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function at(s){return esc(s).replace(/"/g,'&quot;')}
+function F(label,scope,k,o){o=o||{};
+  return '<label class="f'+(o.w?' '+o.w:'')+'"'+(o.vis?' data-vis="'+o.vis+'"':'')+(o.gvis?' data-gvis="'+o.gvis+'"':'')+'><span class="l">'+label+'</span><input type="text" class="'+(o.mono?'mono':'')+'" data-scope="'+scope+'"'+(o.id?' data-id="'+o.id+'"':'')+' data-k="'+k+'" placeholder="'+at(o.ph||'')+'" autocomplete="off" spellcheck="false"'+(o.list?' list="'+o.list+'"':'')+'>'+(o.hint?'<span class="h">'+o.hint+'</span>':'')+'</label>';}
+function SEL(label,scope,k,opts,o){o=o||{};
+  return '<label class="f'+(o.w?' '+o.w:'')+'"'+(o.vis?' data-vis="'+o.vis+'"':'')+(o.gvis?' data-gvis="'+o.gvis+'"':'')+'><span class="l">'+label+'</span><select data-scope="'+scope+'"'+(o.id?' data-id="'+o.id+'"':'')+' data-k="'+k+'">'+opts.map(function(p){return '<option value="'+p[0]+'">'+p[1]+'</option>'}).join('')+'</select></label>';}
+function CHK(label,scope,k,o){o=o||{};
+  return '<label class="chk'+(o.w?' '+o.w:'')+'"'+(o.vis?' data-vis="'+o.vis+'"':'')+(o.gvis?' data-gvis="'+o.gvis+'"':'')+'><input type="checkbox" data-scope="'+scope+'"'+(o.id?' data-id="'+o.id+'"':'')+' data-k="'+k+'"><span>'+label+'</span></label>';}
+
+var S,$=function(s){return document.querySelector(s)};
+function getObj(sc,id){if(sc==='if')return S.ifaces.filter(function(x){return x.id===id})[0];if(sc==='st')return S.statics.filter(function(x){return x.id===id})[0];return S[sc]}
+
+function ifaceCard(f){var id=f.id;
+  return '<article class="if" data-id="'+id+'"><div class="if-head"><div class="if-title"><div class="portrow"><select class="portsel" data-id="'+id+'" aria-label="Port">'+PORT_OPTS+'</select><input type="text" data-vis="custom" list="ports" data-scope="if" data-id="'+id+'" data-k="name" aria-label="Custom port name" placeholder="s0/0/1 or lo0" autocomplete="off" spellcheck="false"></div><span class="info" data-info></span></div><button class="ghost" data-act="rm-if" data-id="'+id+'">Remove</button></div><div class="grid">'
+  +F('Description','if','desc',{id:id,ph:'LAN-A'})
+  +F('IPv4 address / prefix','if','ip',{id:id,ph:'192.168.1.1/24',mono:1,hint:'Or 192.168.1.1 255.255.255.0'})
+  +F('IPv6 address / prefix','if','v6',{id:id,ph:'2001:db8:1::1/64',mono:1})
+  +F('IPv6 link-local','if','ll',{id:id,ph:'fe80::1',mono:1})
+  +'<div class="sep"></div>'
+  +SEL('Routing protocol on this port','if','proto',[['none','None'],['ospf','OSPF (v2 and v3)'],['rip','RIP v2 and RIPng'],['eigrp','EIGRP (IPv4 and IPv6)']],{id:id})
+  +F('OSPF area','if','area',{id:id,ph:'0',vis:'ospf'})
+  +CHK('Passive (no routing updates sent out this port)','if','passive',{id:id,vis:'proto'})
+  +'<div class="sep"></div>'
+  +CHK('Run a DHCPv4 server on this port','if','dhcp4',{id:id,w:'wide',vis:'phys'})
+  +F('Also exclude from','if','exFrom',{id:id,ph:'192.168.1.2',mono:1,vis:'dhcp4',hint:'The router address is always excluded'})
+  +F('Exclude to (optional)','if','exTo',{id:id,ph:'192.168.1.10',mono:1,vis:'dhcp4'})
+  +SEL('IPv6 client addressing','if','v6mode',[['none','SLAAC only'],['stateless','SLAAC + DHCPv6 for DNS (stateless)'],['stateful','DHCPv6 gives addresses (stateful)']],{id:id,vis:'phys'})
+  +SEL('NAT role','if','nat',[['none','Not used'],['inside','Inside'],['outside','Outside']],{id:id,vis:'nat'})
+  +CHK('Serial DCE end (sets clock rate)','if','dce',{id:id,vis:'serial'})
+  +F('Clock rate','if','clock',{id:id,ph:'64000',mono:1,vis:'dce'})
+  +CHK('Interface enabled (no shutdown)','if','up',{id:id})
+  +'</div></article>';}
+function stCard(r){var id=r.id;
+  return '<article class="st" data-id="'+id+'"><div class="if-head"><div class="if-title"><span class="l">Static route</span></div><button class="ghost" data-act="rm-st" data-id="'+id+'">Remove</button></div><div class="grid">'
+  +SEL('Family','st','fam',[['4','IPv4'],['6','IPv6']],{id:id})
+  +F('Destination','st','dest',{id:id,ph:'0.0.0.0/0  or  ::/0',mono:1})
+  +F('Next hop','st','nh',{id:id,ph:'10.0.0.2',mono:1})
+  +F('Exit interface (optional)','st','exit',{id:id,ph:'s0/0/0',mono:1,list:'ports'})
+  +F('Admin distance (optional)','st','ad',{id:id,ph:'5 makes a backup route',mono:1})
+  +'</div></article>';}
+
+function H(n,t){return '<span class="num">'+n+'</span>'+t}
+var OPEN={};
+function buildForm(){
+  $('#form').innerHTML=
+  '<section class="card"><h2>'+H(1,'Network and subnets')+'</h2><p class="sub">Enter the network address you were given, then list the subnets you need and how many hosts each needs. Use 2 hosts for a link between two routers.</p>'
+  +'<div class="grid">'+pf('Network address','base','192.168.0.0')+pf('Prefix length (the number after the slash)','prefix','24')+'</div>'
+  +'<div class="seg" style="margin-top:14px" role="radiogroup" aria-label="How to divide the network"><label><input type="radio" name="plan-mode" value="vlsm"><span>Subnets of different sizes</span></label><label><input type="radio" name="plan-mode" value="split"><span>Equal-size subnets</span></label></div>'
+  +'<div id="plan-vlsm"><div id="plan-reqs"></div><div class="qa"><button data-act="plan-add">+ Add subnet</button></div></div>'
+  +'<div id="plan-split" hidden><div class="grid"><label class="f"><span class="l">Divide by</span><select data-plan="sby"><option value="count">Number of subnets</option><option value="hosts">Hosts per subnet</option><option value="prefix">New prefix length</option></select></label>'+pf('Value','sval','4')+'</div></div>'
+  +'<div id="plan-out"></div></section>'
+
+  +'<section class="card"><h2>'+H(2,'Routers')+'</h2><p class="sub">Add a tab for each router in your topology, then name the one that is selected.</p><div class="rbar" id="rbar"></div><div class="grid">'
+  +F('Hostname','basic','hostname',{ph:'R1'})
+  +F('Domain name (optional)','basic','domain',{ph:'example.com',hint:'Only needed for SSH'})
+  +'</div></section>'
+
+  +'<section class="card"><h2>'+H(3,'Give subnets to ports')+'</h2><p class="sub">Pick a port for each subnet and press Set IP. The address is filled in for you. You can still change anything per port below.</p><div id="plan-assign"></div>'
+  +'<h3 class="sec-h">Ports on this router</h3><div id="ifaces" style="margin-top:10px"></div><div class="qa"><button data-act="add-if">+ Add port</button><button data-act="add-lo">+ Add loopback</button></div></section>'
+
+  +'<section class="card"><h2>'+H(4,'Routing')+'</h2><p class="sub">Choose how routers learn each other\'s networks. Each port\'s subnet is added automatically. RIP gets the classful network, OSPF and EIGRP get the exact subnet.</p>'
+  +'<div class="qa"><span class="l">Use one protocol on every port</span>'
+  +[['ospf','OSPF'],['rip','RIP'],['eigrp','EIGRP'],['none','None']].map(function(p){return '<button data-act="all-proto" data-p="'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>'
+  +'<p class="empty" data-gvis="noproto">No port runs a routing protocol yet. Pick one above or on a port, or add static routes below.</p>'
+  +'<div class="adv" id="adv"></div>'
+  +'<div class="grid">'
+  +F('OSPF process ID','ospf','pid',{ph:'1',mono:1,gvis:'ospf'})+F('OSPF router ID','ospf','rid',{ph:'1.1.1.1',mono:1,gvis:'ospf',hint:'Needed for OSPFv3 without an IPv4 address'})
+  +CHK('Advertise a default route (OSPF)','ospf','defOrig',{gvis:'ospf'})
+  +F('RIPng process name','rip','name',{ph:'RIPNG',gvis:'rip'})
+  +F('EIGRP AS number','eigrp','as',{ph:'100',mono:1,gvis:'eigrp'})+F('EIGRP router ID','eigrp','rid',{ph:'1.1.1.1',mono:1,gvis:'eigrp'})
+  +'</div>'
+  +'<h3 class="sec-h">Static routes</h3><p class="sub">Use 0.0.0.0/0 or ::/0 for a default route. An admin distance above 1 makes a floating backup.</p><div id="statics"></div><button data-act="add-st">+ Add static route</button>'
+  +'<h3 class="sec-h">Redistribution (advanced)</h3><p class="sub">Tick this on the router that connects two protocols. Other routers are not affected.</p><div class="checks" style="margin-top:0">'
+  +CHK('OSPF ↔ RIP','redist','ospfRip')+CHK('OSPF ↔ EIGRP','redist','ospfEigrp')+CHK('RIP ↔ EIGRP','redist','ripEigrp')
+  +'</div></section>'
+
+  +'<details class="card" data-key="svc"><summary><h2>'+H(5,'DHCP and NAT')+'</h2><span class="pill">Optional</span></summary>'
+  +'<p class="sub">Turn on DHCP for a port inside its port card. These settings are shared by every port that uses it.</p><div class="grid">'
+  +F('IPv4 DNS server(s)','dhcp','dns4',{ph:'8.8.8.8',mono:1,hint:'Separate several with spaces'})
+  +F('IPv6 DNS server(s)','dhcp','dns6',{ph:'2001:4860:4860::8888',mono:1})
+  +F('DHCP domain name','dhcp','domain',{ph:'Uses the router domain if blank'})
+  +F('Lease (days)','dhcp','lease',{ph:'1 by default',mono:1})
+  +'</div><h3 class="sec-h">NAT</h3><p class="sub">Overload (PAT) for the inside ports through one outside port. Set each port as Inside or Outside in its port card.</p>'
+  +CHK('Turn on NAT','nat','enabled')
+  +'<div class="grid" style="margin-top:8px">'+F('Access list number','nat','acl',{ph:'1',mono:1,gvis:'nat'})+'</div></details>'
+
+  +'<details class="card" data-key="sec"><summary><h2>'+H(6,'Passwords and remote access')+'</h2><span class="pill">Optional</span></summary>'
+  +'<p class="sub">Passwords, login banner and how you log in to the router from the network.</p><div class="grid">'
+  +F('Enable secret','basic','secret',{ph:'cisco'})
+  +F('Console password','basic','conpass',{ph:'cisco'})
+  +F('Login banner (MOTD)','basic','banner',{w:'wide',ph:'Authorised access only'})
+  +'</div><div class="checks">'
+  +CHK('Encrypt line passwords','basic','encrypt')+CHK('Skip DNS lookups on typos','basic','nolookup')+CHK('Enable IPv6 routing','basic','v6')+CHK('Add save commands at the end (write memory)','opts','save')
+  +'</div>'
+  +'<h3 class="sec-h">Remote access</h3>'
+  +'<div class="seg" style="margin-top:8px" role="radiogroup" aria-label="Remote access type">'
+  +[['ssh','SSH'],['telnet','Telnet'],['both','SSH and Telnet'],['none','None']].map(function(p){return '<label><input type="radio" name="acc-mode" value="'+p[0]+'" data-scope="acc" data-k="mode"><span>'+p[1]+'</span></label>'}).join('')
+  +'</div><div class="grid">'
+  +SEL('Login method','acc','login',[['local','Username and password'],['password','Line password only']],{gvis:'logintype'})
+  +F('Username','acc','user',{ph:'admin',gvis:'user'})+F('Password','acc','pass',{ph:'cisco',gvis:'user'})
+  +F('VTY line password','acc','vtypass',{ph:'cisco',gvis:'vtypass'})
+  +SEL('RSA key size','acc','modulus',[['1024','1024 bits'],['2048','2048 bits'],['4096','4096 bits']],{gvis:'sshacc'})
+  +F('VTY lines from','acc','from',{ph:'0',gvis:'vty',mono:1})+F('VTY lines to','acc','to',{ph:'4',gvis:'vty',mono:1,hint:'0 to 4 or 0 to 15'})
+  +'</div></details>';
+  document.getElementById('ports').innerHTML=PORTS.concat(['s0/0/1','s0/1/1','fa0/0','fa0/1','lo0']).map(function(p){return '<option value="'+p+'">'}).join('');
+  document.querySelectorAll('details[data-key]').forEach(function(d){if(OPEN[d.dataset.key])d.open=true});
+  renderLists();
+}
+document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.dataset&&d.dataset.key)OPEN[d.dataset.key]=d.open},true);
+function renderLists(){
+  var a=$('#ifaces'),b=$('#statics');
+  a.innerHTML=S.ifaces.map(ifaceCard).join('')||'<p class="empty">No interfaces yet.</p>';
+  b.innerHTML=S.statics.map(stCard).join('')||'<p class="empty">No static routes.</p>';
+  renderPlanner();
+}
+function sync(root){
+  root.querySelectorAll('[data-scope]').forEach(function(el){
+    var o=getObj(el.dataset.scope,el.dataset.id);if(!o)return;var v=o[el.dataset.k];
+    if(el.type==='checkbox')el.checked=!!v;else if(el.type==='radio')el.checked=(el.value===v);else el.value=(v===undefined||v===null)?'':v;
+  });
+}
+function gvis(k){
+  var u=function(p){return S.ifaces.some(function(f){return f.proto===p})},m=S.acc.mode;
+  switch(k){
+    case 'ospf':return u('ospf');case 'rip':return u('rip');case 'eigrp':return u('eigrp');
+    case 'noproto':return !S.ifaces.some(function(f){return f.proto!=='none'});
+    case 'sshacc':return m==='ssh'||m==='both';case 'user':return m!=='none'&&(m!=='telnet'||S.acc.login==='local');
+    case 'logintype':return m==='telnet';case 'vtypass':return m==='telnet'&&S.acc.login==='password';
+    case 'vty':return m!=='none';case 'nat':return !!S.nat.enabled;
+  }return true;
+}
+function ivis(k,f){
+  var serial=/^s/i.test((f.name||'').trim());
+  var loop=isLoop(f.name);
+  switch(k){case 'custom':return isCustomName(f);case 'proto':return f.proto!=='none';case 'ospf':return f.proto==='ospf';case 'phys':return !loop;case 'dhcp4':return !!f.dhcp4&&!loop;case 'serial':return serial;case 'dce':return serial&&!!f.dce;case 'nat':return !!S.nat.enabled&&!loop}
+  return true;
+}
+function applyVis(){
+  document.querySelectorAll('[data-gvis]').forEach(function(el){el.hidden=!gvis(el.dataset.gvis)});
+  var used={};S.ifaces.forEach(function(x){var n=(x.name||'').trim().toLowerCase();if(n)used[n]=1});
+  document.querySelectorAll('.if').forEach(function(card){
+    var f=getObj('if',card.dataset.id);if(!f)return;
+    card.querySelectorAll('[data-vis]').forEach(function(el){el.hidden=!ivis(el.dataset.vis,f)});
+    var sel=card.querySelector('.portsel'),me=(f.name||'').trim().toLowerCase();
+    if(sel){
+      sel.value=isCustomName(f)?'__custom':(f.name||'').trim();
+      Array.prototype.forEach.call(sel.options,function(o){if(o.value==='__custom')return;var n=o.value.toLowerCase();o.disabled=!!used[n]&&n!==me});
+    }
+  });
+}
+function updateInfo(){
+  document.querySelectorAll('.if').forEach(function(card){
+    var f=getObj('if',card.dataset.id);if(!f)return;
+    var v4=parseV4(f.ip),v6=parseV6(f.v6),t=[];
+    if(v4){t.push(v4str(v4.net)+'/'+v4.cidr+', wildcard '+v4str(v4.wild));
+      if(f.dhcp4){var lz=leasable({f:f,v4:v4});if(lz)t.push(lz.leasable+' of '+lz.total+' leasable')}}
+    if(v6)t.push('IPv6 network '+v6.net+'/'+v6.p);
+    card.querySelector('[data-info]').textContent=t.join(' · ');
+  });
+}
+
+/* ---------- subnet calculator ---------- */
+var planRows=[];
+function pf(label,key,ph){return '<label class="f"><span class="l">'+label+'</span><input type="text" class="mono" data-plan="'+key+'" placeholder="'+at(ph)+'" autocomplete="off" spellcheck="false"></label>'}
+function hostsOf(v){var t=String(v==null?'':v).trim();if(!t)return null;var n=Number(t);return (n%1===0&&n>=1)?n:null}
+function blockFor(h){var s=4;while(s<h+2)s*=2;return s}          /* network + broadcast included */
+function prefixForSize(s){var p=32,t=1;while(t<s){t*=2;p--}return p}
+function blockInfo(net,p){
+  var size=Math.pow(2,32-p),bc=net+size-1,first,last,usable;
+  if(p<=30){first=net+1;last=bc-1;usable=size-2}
+  else if(p===31){first=net;last=bc;usable=2}
+  else{first=net;last=net;usable=1}
+  return {net:net,p:p,bc:bc,first:first,last:last,usable:usable};
+}
+function planBase(P){
+  var s=String(P.base||'').trim(),pr=String(P.prefix||'').trim(),i=s.indexOf('/');
+  if(i>-1){pr=s.slice(i+1).trim();s=s.slice(0,i).trim()}
+  var ip=v4int(s);if(ip===null)throw new Error('Base network is not a valid IPv4 address.');
+  if(!/^\d{1,2}$/.test(pr)||+pr>32)throw new Error('Base prefix must be a number from 0 to 32.');
+  var c=+pr;return {net:(ip&cidrMask(c))>>>0,p:c,size:Math.pow(2,32-c)};
+}
+function planVlsm(P){
+  var b=planBase(P);
+  if(!P.reqs.length)throw new Error('Add at least one subnet.');
+  var reqs=P.reqs.map(function(r,i){
+    var h=hostsOf(r.hosts),nm=(r.name||'').trim()||('Subnet '+(i+1));
+    if(h===null)throw new Error('"'+nm+'" needs a host count of 1 or more.');
+    return {name:nm,hosts:h,size:blockFor(h),i:i};
+  });
+  /* largest first: aligned power-of-two blocks packed in this order never leave gaps */
+  var sorted=reqs.slice().sort(function(a,c){return (c.size-a.size)||(a.i-c.i)});
+  var used=sorted.reduce(function(s,r){return s+r.size},0);
+  if(used>b.size)throw new Error('These subnets need '+used.toLocaleString()+' addresses, but /'+b.p+' has only '+b.size.toLocaleString()+'. Use a bigger base or fewer hosts.');
+  var cur=b.net;
+  var rows=sorted.map(function(r){var info=blockInfo(cur,prefixForSize(r.size));cur+=r.size;return {name:r.name,hosts:r.hosts,info:info}});
+  return {rows:rows,used:used,size:b.size,free:b.size-used,freeStart:cur,end:b.net+b.size-1};
+}
+function planSplit(P){
+  var b=planBase(P),val=String(P.sval==null?'':P.sval).trim(),nP,note='';
+  if(P.sby==='prefix'){
+    if(!/^\d{1,2}$/.test(val)||+val>32)throw new Error('New prefix must be a number from 0 to 32.');
+    nP=+val;
+  }else if(P.sby==='count'){
+    var c=hostsOf(val);if(c===null)throw new Error('Number of subnets must be 1 or more.');
+    var bits=0;while(Math.pow(2,bits)<c)bits++;
+    nP=b.p+bits;if(nP>32)throw new Error('This network is too small to make '+c+' subnets.');
+    if(Math.pow(2,bits)!==c)note='Subnets come in powers of 2, so '+c+' rounds up to '+Math.pow(2,bits)+'.';
+  }else{
+    var h=hostsOf(val);if(h===null)throw new Error('Hosts per subnet must be 1 or more.');
+    nP=prefixForSize(blockFor(h));
+  }
+  if(nP<b.p)throw new Error('The new prefix must be /'+b.p+' or larger (a bigger number means smaller subnets).');
+  var count=Math.pow(2,nP-b.p),size=Math.pow(2,32-nP),n=Math.min(count,64),rows=[];
+  for(var i=0;i<n;i++)rows.push({name:'Subnet '+(i+1),info:blockInfo(b.net+i*size,nP)});
+  return {base:b,newP:nP,count:count,rows:rows,note:note};
+}
+var PROTO_OPTS='<option value="ospf">OSPF</option><option value="rip">RIP</option><option value="eigrp">EIGRP</option><option value="none">None</option>';
+function PL(){return ROUTERS[0].planner}
+function planTable(rows){
+  if(!rows.length)return '';
+  var body=rows.map(function(r){
+    var i=r.info;
+    return '<tr><td>'+esc(r.name)+(i.p===30?' <span class="pill">Link</span>':'')+'</td><td>'+(r.hosts==null?i.usable:r.hosts)+'</td><td>'+v4str(i.net)+'/'+i.p+'</td><td>'+v4str(cidrMask(i.p))+'</td><td>'+v4str(i.first)+' – '+v4str(i.last)+'</td><td>'+v4str(i.bc)+'</td></tr>';
+  }).join('');
+  return '<div class="scroll" style="margin-top:12px"><table class="ptbl"><thead><tr><th>Name</th><th>Hosts</th><th>Network</th><th>Mask</th><th>Usable range</th><th>Broadcast</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+}
+function planAssign(rows){
+  if(!rows.length)return '<p class="empty">Create your subnets in step 1 first.</p>';
+  var opts=portOptions();
+  if(!opts)return '<p class="empty">Add a port below first.</p>';
+  var body=rows.map(function(r,k){
+    var i=r.info,link=i.p===30,act;
+    if(link)act='<div class="assign"><select id="pa-'+k+'" aria-label="First router port">'+opts+'</select><select id="pb-'+k+'" aria-label="Second router port">'+opts+'</select><select id="pp-'+k+'" aria-label="Routing protocol">'+PROTO_OPTS+'</select><button data-act="plan-link" data-k="'+k+'">Set link</button></div>';
+    else act='<div class="assign"><label class="hostno">Host no.<input type="number" min="1" id="ph-'+k+'" value="1" title="1 is the first usable address"></label><select id="pa-'+k+'" aria-label="Port">'+opts+'</select><button data-act="plan-assign" data-k="'+k+'">Set IP</button></div>';
+    return '<tr><td>'+esc(r.name)+(link?' <span class="pill">Router link</span>':'')+'</td><td>'+v4str(i.net)+'/'+i.p+'</td><td>'+act+'</td></tr>';
+  }).join('');
+  return '<div class="scroll"><table class="ptbl"><thead><tr><th>Subnet</th><th>Network</th><th>Apply to</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+}
+function planOut(){
+  var P=PL(),html='',rows=[];
+  try{
+    if(P.mode==='split'){
+      var s=planSplit(P);
+      rows=s.rows;
+      html+='<p class="empty" style="margin-top:12px">'+s.count.toLocaleString()+' subnets of /'+s.newP+' in '+v4str(s.base.net)+'/'+s.base.p+', '+s.rows[0].info.usable.toLocaleString()+' usable hosts each.'+(s.note?' '+esc(s.note):'')+(s.count>rows.length?' Showing the first '+rows.length+'.':'')+'</p>';
+    }else{
+      var v=planVlsm(P);
+      rows=v.rows;
+      html+='<p class="empty" style="margin-top:12px">Largest subnets are placed first. Using '+v.used.toLocaleString()+' of '+v.size.toLocaleString()+' addresses'+(v.free>0?'. Unused: '+v.free.toLocaleString()+' ('+v4str(v.freeStart)+' to '+v4str(v.end)+')':'')+'.</p>';
+    }
+    planRows=rows;
+    html+=planTable(rows);
+  }catch(err){planRows=[];rows=[];html='<div class="warnbox">'+esc(err.message)+'</div>'}
+  $('#plan-out').innerHTML=html;
+  $('#plan-assign').innerHTML=(planMsg?'<div class="'+(planOk?'okbox':'warnbox')+'" style="margin:0 0 12px">'+esc(planMsg)+'</div>':'')+planAssign(rows);
+  planMsg='';
+}
+function renderReqs(){
+  $('#plan-reqs').innerHTML=PL().reqs.map(function(r,i){
+    return '<div class="prow"><input type="text" data-plan="req" data-i="'+i+'" data-k="name" value="'+at(r.name)+'" placeholder="Subnet name, e.g. LAN-A" autocomplete="off" spellcheck="false"><input type="number" min="1" data-plan="req" data-i="'+i+'" data-k="hosts" value="'+at(r.hosts)+'" placeholder="Hosts needed"><button class="ghost" data-act="plan-rm" data-i="'+i+'">Remove</button></div>';
+  }).join('')||'<p class="empty">No subnets yet. Add one below.</p>';
+}
+function renderPlanner(){
+  if(!$('#plan-reqs'))return;
+  var P=PL();
+  document.querySelectorAll('[data-plan]').forEach(function(el){
+    if(el.dataset.plan==='req')return;
+    el.value=(P[el.dataset.plan]==null)?'':P[el.dataset.plan];
+  });
+  document.querySelectorAll('input[name="plan-mode"]').forEach(function(r){r.checked=(r.value===P.mode)});
+  $('#plan-vlsm').hidden=P.mode==='split';$('#plan-split').hidden=P.mode!=='split';
+  renderReqs();planOut();
+}
+function planEdit(e){
+  var t=e.target;if(!t||!t.dataset)return;
+  var P=PL();
+  if(t.name==='plan-mode'){
+    if(!t.checked)return;
+    P.mode=t.value;$('#plan-vlsm').hidden=t.value==='split';$('#plan-split').hidden=t.value!=='split';
+  }
+  else if(t.dataset.plan==='req'){var r=P.reqs[+t.dataset.i];if(!r)return;r[t.dataset.k]=t.value}
+  else if(t.dataset.plan){P[t.dataset.plan]=t.value}
+  else return;
+  planOut();refresh();
+}
+
+var lastText='';
+function refresh(){
+  applyVis();updateInfo();renderTabs();
+  var r=generate(S);lastText=r.lines.join('\n');
+  $('#pre').innerHTML=r.lines.map(function(l){var c=l.charAt(0)==='!'?'c':(/^\s/.test(l)?'':'g');return c?'<span class="'+c+'">'+esc(l)+'</span>':esc(l)}).join('\n');
+  $('#count').textContent=r.lines.length+' lines';
+  $('#notes').innerHTML=r.warns.map(function(w){return '<li class="'+w.t+'"><b>'+(w.t==='warn'?'Fix':'Note')+'</b>'+esc(w.m)+'</li>'}).join('');
+  $('#verify').innerHTML='<h3>Check it works<button data-act="copy-verify">Copy</button></h3>'+r.verify.map(function(c){return '<code>'+esc(c)+'</code>'}).join('');
+  $('#adv').innerHTML=r.adv.map(function(a){return '<div><b>'+a.p+' advertises</b>'+a.n.map(function(n){return '<code>'+esc(n)+'</code>'}).join('')+'</div>'}).join('');
+  $('#pill').hidden=!S.meta.example;
+  window.__verify=r.verify.join('\n');
+  persist();
+}
+function onEdit(e){
+  var t=e.target;
+  if(t.classList&&t.classList.contains('portsel')){
+    var pf=getObj('if',t.dataset.id);if(!pf)return;
+    if(t.value==='__custom'){pf.custom=true;if(PORTS.indexOf((pf.name||'').trim())>-1)pf.name=''}
+    else{pf.custom=false;pf.name=t.value}
+    S.meta.example=false;sync(t.closest('.if'));refresh();return;
+  }
+  if(!t.dataset||!t.dataset.scope)return;
+  if(t.type==='radio'&&!t.checked)return;
+  var o=getObj(t.dataset.scope,t.dataset.id);if(!o)return;
+  o[t.dataset.k]=t.type==='checkbox'?t.checked:t.value;
+  if(t.dataset.scope!=='opts')S.meta.example=false;
+  refresh();
+}
+function flash(btn,txt){var o=btn.dataset.o||btn.textContent;btn.dataset.o=o;btn.textContent=txt;setTimeout(function(){btn.textContent=o},1600)}
+function copyText(text,btn,sel){
+  var fb=function(){var r=document.createRange();r.selectNodeContents(sel);var g=getSelection();g.removeAllRanges();g.addRange(r);flash(btn,'Selected, press Ctrl+C')};
+  try{navigator.clipboard.writeText(text).then(function(){flash(btn,'Copied')},fb)}catch(e){fb()}
+}
+function onClick(e){
+  var b=e.target.closest('[data-act]');if(!b)return;var act=b.dataset.act;
+  if(act==='add-if'){
+    var taken=S.ifaces.map(function(x){return (x.name||'').trim().toLowerCase()});
+    var nm=PORTS.filter(function(p){return taken.indexOf(p)<0})[0]||'';
+    S.ifaces.push(newIface({name:nm,custom:!nm}));S.meta.example=false;renderLists();sync($('#ifaces'));refresh()}
+  else if(act==='add-lo'){
+    var n=0;while(S.ifaces.some(function(x){return (x.name||'').trim().toLowerCase()==='lo'+n}))n++;
+    var o=String(n+1);S.ifaces.push(newIface({name:'lo'+n,custom:true,desc:'Loopback '+n,ip:o+'.'+o+'.'+o+'.'+o+'/32'}));
+    S.meta.example=false;renderLists();sync($('#ifaces'));refresh();
+  }
+  else if(act==='all-proto'){S.ifaces.forEach(function(f){f.proto=b.dataset.p});S.meta.example=false;renderLists();sync($('#ifaces'));refresh()}
+  else if(act==='rm-if'){S.ifaces=S.ifaces.filter(function(x){return x.id!==b.dataset.id});renderLists();sync($('#ifaces'));refresh()}
+  else if(act==='add-st'){S.statics.push(newStatic());renderLists();sync($('#statics'));refresh()}
+  else if(act==='rm-st'){S.statics=S.statics.filter(function(x){return x.id!==b.dataset.id});renderLists();sync($('#statics'));refresh()}
+  else if(act==='example'){S=ROUTERS[RI]=example();sync(document);renderLists();sync(document);refresh()}
+  else if(act==='clear'){S=ROUTERS[RI]=defaults();renderLists();sync(document);refresh()}
+  else if(act==='copy')copyText(lastText,b,$('#pre'));
+  else if(act==='copy-verify')copyText(window.__verify||'',b,$('#verify'));
+  else if(act==='plan-add'){PL().reqs.push({name:'',hosts:''});renderReqs();planOut();refresh()}
+  else if(act==='plan-rm'){PL().reqs.splice(+b.dataset.i,1);renderReqs();planOut();refresh()}
+  else if(act==='plan-assign'){
+    var k=+b.dataset.k,row=planRows[k],sel=document.getElementById('pa-'+k),hin=document.getElementById('ph-'+k);
+    if(!row||!sel||!hin)return;var port=findPort(sel.value);if(!port)return;
+    var h=+hin.value;
+    if(hin.value===''||h%1||h<1||h>row.info.usable){planMsg='Host number must be from 1 to '+row.info.usable+'.';planOk=false;planOut();return}
+    var addr=row.info.first+h-1;setPort(port.f,addr,row.info.p,row.name);
+    planMsg=portName(port.f)+' on '+rname(port.R)+' is now '+v4str(addr)+'/'+row.info.p+'.';planOk=true;
+    renderLists();sync($('#ifaces'));refresh()}
+  else if(act==='plan-link'){
+    var k2=+b.dataset.k,lr=planRows[k2],A=findPort(document.getElementById('pa-'+k2).value),B=findPort(document.getElementById('pb-'+k2).value);
+    if(!lr||!A||!B||A.f===B.f){planMsg='Pick two different ports for the two ends of the link.';planOk=false;planOut();return}
+    var lp=document.getElementById('pp-'+k2).value;
+    setPort(A.f,lr.info.first,lr.info.p,lr.name,lp);setPort(B.f,lr.info.first+1,lr.info.p,lr.name,lp);
+    planMsg=lr.name+': '+rname(A.R)+' '+portName(A.f)+' '+v4str(lr.info.first)+', '+rname(B.R)+' '+portName(B.f)+' '+v4str(lr.info.first+1)+', protocol '+lp.toUpperCase()+'.';planOk=true;
+    renderLists();sync($('#ifaces'));refresh()}
+  else if(act==='rsel')switchRouter(+b.dataset.i);
+  else if(act==='radd'){var nn=ROUTERS.length+1,ns=defaults();ns.basic.hostname='R'+nn;ROUTERS.push(ns);switchRouter(ROUTERS.length-1)}
+  else if(act==='rdel'){if(ROUTERS.length>1){ROUTERS.splice(RI,1);switchRouter(Math.max(0,RI-1))}}
+  else if(act==='jump')$('#out').scrollIntoView({behavior:'smooth',block:'start'});
+}
+/* ---------- multiple routers ---------- */
+var ROUTERS=[],RI=0,planMsg='',planOk=false;
+function fromObj(p){
+  var d=defaults();
+  ['basic','acc','ospf','rip','eigrp','dhcp','nat','opts','meta','planner','redist'].forEach(function(k){d[k]=Object.assign(d[k],p[k]||{})});
+  if(Array.isArray(p.ifaces))d.ifaces=p.ifaces.map(function(x){return newIface(x)});
+  if(Array.isArray(p.statics))d.statics=p.statics.map(function(x){return newStatic(x)});
+  return d;
+}
+function loadAll(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){var p=JSON.parse(raw);if(Array.isArray(p.routers)&&p.routers.length){ROUTERS=p.routers.map(fromObj);RI=Math.min(Math.max(0,+p.active||0),ROUTERS.length-1);return}}
+    var old=localStorage.getItem(OLD_KEY);if(old){ROUTERS=[fromObj(JSON.parse(old))];RI=0;return}
+  }catch(e){}
+  ROUTERS=[example()];RI=0;
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({active:RI,routers:ROUTERS}))}catch(e){}}
+function rname(R){return (R.basic.hostname||'').trim()||'Router'}
+function switchRouter(i){RI=i;S=ROUTERS[i];buildForm();sync(document);refresh()}
+function renderTabs(){
+  var el=$('#rbar');if(!el)return;
+  el.innerHTML=ROUTERS.map(function(R,i){return '<button class="rtab'+(i===RI?' on':'')+'" data-act="rsel" data-i="'+i+'">'+esc(rname(R))+'</button>'}).join('')
+    +'<button class="rtab add" data-act="radd">+ Add router</button>'
+    +(ROUTERS.length>1?'<button class="ghost" data-act="rdel">Remove this router</button>':'');
+}
+function portName(f){return (f.name||'').trim()||'port'}
+function portOptions(){return ROUTERS.map(function(R,ri){return R.ifaces.map(function(f){return '<option value="'+ri+'|'+f.id+'">'+esc(rname(R))+' · '+esc(portName(f))+'</option>'}).join('')}).join('')}
+function findPort(v){var p=String(v).split('|'),R=ROUTERS[+p[0]];if(!R)return null;var f=R.ifaces.filter(function(x){return x.id===p[1]})[0];return f?{R:R,f:f}:null}
+function setPort(f,addr,p,desc,proto){f.ip=v4str(addr)+'/'+p;if(!(f.desc||'').trim()&&desc)f.desc=desc;if(proto)f.proto=proto}
+function boot(){
+  loadAll();S=ROUTERS[RI];
+  buildForm();sync(document);
+  document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);document.addEventListener('click',onClick);
+  document.addEventListener('input',planEdit);document.addEventListener('change',planEdit);
+  refresh();
+}
+if(typeof window==='undefined'){module.exports={generate:generate,example:example,defaults:defaults,parseV4:parseV4,parseV6:parseV6}}else{boot()}
+})();
+</script>
+
+<footer style="text-align:center;color:var(--muted);font-size:13px;padding:24px 16px 8px">Made by Josh Herald Abelardo</footer>
+</body></html>
